@@ -3,7 +3,6 @@ import pandas as pd
 import dotenv
 import os
 import tkinter as tk
-from tkinter import filedialog
 import sys
 
 # Popup Windows to give alert notices
@@ -90,6 +89,8 @@ def get_retained_holdings(oclc_numbers, token):
     retained_holdings = []
     for i, ocn in enumerate(oclc_numbers, start=1):
         print(f'[{i}/{len(oclc_numbers)}] OCN {ocn} ...')
+        if i%500 == 0 and i!=0:
+            headers['Authorization'] = f'Bearer {get_token()}'
         r = requests.get(os.getenv("API_URL"), headers=headers, params={'oclcNumber': ocn})
         if r.status_code != 200:
             retained_holdings.append({'oclcNumber': ocn, 'title': '', 'allSymbols': '', 'allNames': '', 'notes': f'Error {r.status_code}'})
