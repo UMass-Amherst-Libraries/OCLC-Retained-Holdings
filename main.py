@@ -117,7 +117,7 @@ def get_retained_holdings(oclc_numbers, token):
 
 def save_results(retained_holdings):
     out_df = pd.DataFrame(retained_holdings)
-    out_name = 'retained_holdings_aggregated.csv'
+    out_name = 'Output/retained_holdings_aggregated.csv'
     out_df.to_csv(out_name, index=False)
     out_df.head()
 
