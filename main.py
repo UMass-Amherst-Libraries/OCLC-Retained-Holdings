@@ -57,42 +57,51 @@ class Menu:
         self.act_menu.mainloop()
 
     def file_select(self):
-        self.filename = tk.filedialog.askopenfilename(filetypes =[('csv file', '*.csv')])
+        self.filename = filedialog.askopenfilename()
         self.selectedFile.config(text = f"Selected File: {self.filename[self.filename.rfind('/')+1:]}")
         self.selectedFile.update_idletasks()
         self.run.config(state="normal")
 
     def get_OCLC_retained_holdings(self):
-        token = get_token()
-        oclc_numbers = get_OCLC_numbers(self.filename)
-        retained_holdings = get_retained_holdings(oclc_numbers, token)
-        save_results(retained_holdings)
+        token = getToken()
+        oclc_numbers = readInputFile(self.filename)
+        retained_holdings = getRetainedHoldings(oclc_numbers, token)
+        saveResults(retained_holdings, self.filename)
         PopupWindow("Results Saved!")
 
-
-def get_token():
+def getToken():
+    print("Getting access token...")
     resp = requests.post(os.getenv("TOKEN_URL"), 
                          auth=(os.getenv("WSKEY"), os.getenv("SECRET")), 
                          headers={'Content-Type': 'application/x-www-form-urlencoded'}, 
-                         data={'grant_type': 'client_credentials', 'scope': os.getenv("SCOPE")})
-    print(resp.status_code)
+                         data={'grant_type': 'client_credentials', 'scope': os.getenv("SCOPE")},
+                         timeout=1000)
+    print("Access token retrieved")
     return resp.json()['access_token']
 
-def get_OCLC_numbers(filename):
-    oclc_df = pd.read_csv(filename, dtype="string")
-    if 'oclcNumber' not in oclc_df.columns:
-        raise ValueError('CSV must have column oclcNumber')
+def readInputFile(filename):
+    if filename[filename.rfind('.'):] == '.csv':
+        oclc_df = pd.read_csv(filename, dtype="string")
+        if 'oclcNumber' not in oclc_df.columns:
+            raise ValueError('CSV must have column oclcNumber')
+    elif filename[filename.rfind('.'):] == '.tsv':
+        oclc_df = pd.read_csv(filename, dtype="string", delimiter = '\t')
+        if 'oclcNumber' not in oclc_df.columns:
+            raise ValueError('CSV must have column oclcNumber')
+    else:
+        PopupWindow("File type must be .csv or .tsv")
+
     oclc_numbers = oclc_df['oclcNumber'].dropna().astype(str).tolist()
     return oclc_numbers
 
-def get_retained_holdings(oclc_numbers, token):
+def getRetainedHoldings(oclc_numbers, token):
     headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
     retained_holdings = []
     for i, ocn in enumerate(oclc_numbers, start=1):
         print(f'[{i}/{len(oclc_numbers)}] OCN {ocn} ...')
         if i%500 == 0 and i!=0:
-            headers['Authorization'] = f'Bearer {get_token()}'
-        r = requests.get(os.getenv("API_URL"), headers=headers, params={'oclcNumber': ocn})
+            headers['Authorization'] = f'Bearer {getToken()}'
+        r = requests.get(os.getenv("API_URL"), headers=headers, params={'oclcNumber': ocn}, timeout=1000)
         if r.status_code != 200:
             retained_holdings.append({'oclcNumber': ocn, 'title': '', 'allSymbols': '', 'allNames': '', 'notes': f'Error {r.status_code}'})
         data = r.json()
@@ -116,14 +125,12 @@ def get_retained_holdings(oclc_numbers, token):
                 retained_holdings.append({'oclcNumber': ocn, 'title': title, 'allSymbols': '|'.join(filter(None, symbols)), 'allNames': ' | '.join(filter(None, names))})
     return retained_holdings
 
-def save_results(retained_holdings):
+def saveResults(retained_holdings, input_file_name):
     out_df = pd.DataFrame(retained_holdings)
-    out_name = 'Output/retained_holdings_aggregated.csv'
+    out_name = f"Output/{input_file_name[input_file_name.rfind('/')+1:input_file_name.rfind('.')]}.csv"
     out_df.to_csv(out_name, index=False)
     out_df.head()
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
     Menu()
-    #print(get_OCLC_numbers("test_file.csv"))
-    #print(get_token())
