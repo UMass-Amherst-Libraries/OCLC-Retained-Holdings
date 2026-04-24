@@ -2,3 +2,6 @@ pyinstaller
 pandas
 dotenv
 tkinter
+tqdm
+aiohttp
+asyncio
