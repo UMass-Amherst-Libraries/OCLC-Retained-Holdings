@@ -17,6 +17,9 @@ See the file "[LICENSE](LICENSE)" for more details.
 - pandas
 - dotenv
 - tkinter
+- aiohttp
+- asyncio
+- tqdm
 
 ## Optional Requirements
 - pyinstaller
@@ -47,6 +50,8 @@ In the main program folder, create a file named ```.env``` with the following fi
 > TOKEN_URL = https://oauth.oclc.org/token
 > 
 > API_URL = https://metadata.api.oclc.org/worldcat/search/bibs-retained-holdings
+>
+> LOG_PATH = {Folder where Logs should be saved}
 
 ## Usage
 - Run the program
