@@ -4,4 +4,3 @@ dotenv
 tkinter
 tqdm
 aiohttp
-asyncio
