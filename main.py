@@ -88,7 +88,7 @@ class Menu:
         for (i, chunk) in chunked_oclc_numbers:
             logging.info(f'Retrieving retained holdings for chunk {i}')
 
-            oclc_df = pd.DataFrame(columns=['oclcNumber','title', 'allSymbols', 'allNames', 'notes'], index=range(0,len(chunk.index)), data=[]*100)
+            oclc_df = pd.DataFrame(columns=['oclcNumber','title', 'allSymbols', 'Non-UM holdings count', 'UM held', 'allNames', 'notes'], index=range(0,len(chunk.index)), data=[]*100)
             
             chunk_retained_holdings = asyncio.run(asyncGetRetainedHoldings(chunk))
             for index, row in enumerate(chunk_retained_holdings):
@@ -167,12 +167,12 @@ async def asyncRequest(session, url, headers, params):
 async def processResponse(response, params):
     if response.status != 200:
         logging.warning(f'Request on {params["oclcNumber"]} returned {response.status}')
-        data = {'oclcNumber': params["oclcNumber"], 'title': '', 'allSymbols': '', 'allNames': '', 'notes': f'Error {response.status}'}
+        data = {'oclcNumber': params["oclcNumber"], 'title': '', 'allSymbols': '', 'Non-UM holdings count': '', 'UM held': '', 'allNames': '', 'notes': f'Error {response.status}'}
     else:
         data = await response.json()
         brief_records = data.get('briefRecords', [])
         if not brief_records:
-            data = {'oclcNumber': params['oclcNumber'], 'title': '', 'allSymbols': '', 'allNames': '', 'notes': 'No holdings'}
+            data = {'oclcNumber': params['oclcNumber'], 'title': '', 'allSymbols': '', 'Non-UM holdings count': '', 'UM held': '', 'allNames': '', 'notes': 'No holdings'}
         else:
             title = brief_records[0].get('title', '')
             symbols = []
@@ -187,7 +187,9 @@ async def processResponse(response, params):
                     for ih in inst:
                         symbols.append(ih.get('oclcSymbol', ih.get('symbol', '')))
                         names.append(ih.get('institutionName', ih.get('name', '')))
-                data = {'oclcNumber': params['oclcNumber'], 'title': title, 'allSymbols': '|'.join(filter(None, symbols)), 'allNames': ' | '.join(filter(None, names)), 'notes': ''}
+                nonNoneSymbols = [x for x in symbols if x is not None]
+                nonUmassSymbols = [x for x in nonNoneSymbols if x !="AUM"]
+                data = {'oclcNumber': params['oclcNumber'], 'title': title, 'allSymbols': '|'.join(nonNoneSymbols), 'Non-UM holdings count': str(len(nonUmassSymbols)), 'UM held': str(nonUmassSymbols!=nonNoneSymbols), 'allNames': ' | '.join(filter(None, names)), 'notes': ''}
     return data
 
 
