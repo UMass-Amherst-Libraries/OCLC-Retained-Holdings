@@ -1,6 +1,6 @@
-pyinstaller
 pandas
 dotenv
-tkinter
 tqdm
 aiohttp
+sv_ttk
+numpy
