@@ -88,7 +88,7 @@ class Menu:
         for (i, chunk) in chunked_oclc_numbers:
             logging.info(f'Retrieving retained holdings for chunk {i}')
 
-            oclc_df = pd.DataFrame(columns=['oclcNumber','title', 'allSymbols', 'EAST Symbols', 'Non-UM holdings count', 'non-UM EAST holdings count', 'UM held', 'allNames', 'notes'], index=range(0,len(chunk.index)), data=[]*100)
+            oclc_df = pd.DataFrame(columns=['oclcNumber','title', 'allSymbols', 'Non-UM EAST Symbols', 'Non-UM holdings count', 'non-UM EAST holdings count', 'UM held', 'allNames', 'notes'], index=range(0,len(chunk.index)), data=[]*100)
             
             chunk_retained_holdings = asyncio.run(asyncGetRetainedHoldings(chunk))
             for index, row in enumerate(chunk_retained_holdings):
@@ -167,12 +167,12 @@ async def asyncRequest(session, url, headers, params):
 async def processResponse(response, params):
     if response.status != 200:
         logging.warning(f'Request on {params["oclcNumber"]} returned {response.status}')
-        data = {'oclcNumber': params["oclcNumber"], 'title': '', 'allSymbols': '', 'EAST Symbols': '', 'Non-UM holdings count': '',  'non-UM EAST holdings count': '', 'UM held': '', 'allNames': '', 'notes': f'Error {response.status}'}
+        data = {'oclcNumber': params["oclcNumber"], 'title': '', 'allSymbols': '', 'Non-UM EAST Symbols': '', 'Non-UM holdings count': '',  'non-UM EAST holdings count': '', 'UM held': '', 'allNames': '', 'notes': f'Error {response.status}'}
     else:
         data = await response.json()
         brief_records = data.get('briefRecords', [])
         if not brief_records:
-            data = {'oclcNumber': params['oclcNumber'], 'title': '', 'allSymbols': '', 'EAST Symbols': '', 'Non-UM holdings count': '', 'non-UM EAST holdings count': '', 'UM held': '', 'allNames': '', 'notes': 'No holdings'}
+            data = {'oclcNumber': params['oclcNumber'], 'title': '', 'allSymbols': '', 'Non-UM EAST Symbols': '', 'Non-UM holdings count': '', 'non-UM EAST holdings count': '', 'UM held': '', 'allNames': '', 'notes': 'No holdings'}
         else:
             title = brief_records[0].get('title', '')
             symbols = []
@@ -194,7 +194,7 @@ async def processResponse(response, params):
                 nonUmassSymbols = [x for x in nonNoneSymbols if x !="AUM"]
                 eastSymbolCount = sum(symbol in eastSymbols for symbol in symbols)
                 responseEastSymbols = [symbol for symbol in eastSymbols if symbol in symbols]
-                data = {'oclcNumber': params['oclcNumber'], 'title': title, 'allSymbols': '|'.join(nonNoneSymbols), 'EAST Symbols': '|'.join(responseEastSymbols), 'Non-UM holdings count': str(len(nonUmassSymbols)), 'non-UM EAST holdings count': eastSymbolCount, 'UM held': str(nonUmassSymbols!=nonNoneSymbols), 'allNames': ' | '.join(filter(None, names)), 'notes': ''}
+                data = {'oclcNumber': params['oclcNumber'], 'title': title, 'allSymbols': '|'.join(nonNoneSymbols), 'Non-UM EAST Symbols': '|'.join(responseEastSymbols), 'Non-UM holdings count': str(len(nonUmassSymbols)), 'non-UM EAST holdings count': eastSymbolCount, 'UM held': str(nonUmassSymbols!=nonNoneSymbols), 'allNames': ' | '.join(filter(None, names)), 'notes': ''}
     return data
 
 
